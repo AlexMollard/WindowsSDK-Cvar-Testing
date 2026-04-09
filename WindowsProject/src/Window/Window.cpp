@@ -1,6 +1,8 @@
 #include "Window.h"
 
 #include <algorithm>
+#include <chrono>
+#include <ctime>
 #include <iomanip>
 #include <string>
 
@@ -138,6 +140,7 @@ void Window::AddExtraWindowCommands(CommandManager& commandManager, HWND& window
 	commandManager.registerCommands({
 	    { "title", Command(ChangeTitle, "Changes the main window's title") },
 	    { "background-color", Command(ChangeBackgroundFn, backgroundColorDesc), { "bgc" } },
+	    { "time", Command(PrintTime, "Shows the current local date and time"), { "now" } },
 	});
 }
 
@@ -248,4 +251,17 @@ void Window::ChangeBackgroundFn(const std::string_view value)
 	RedrawWindow(m_hwnd, nullptr, nullptr, RDW_ERASE | RDW_INVALIDATE);
 
 	std::cout << "Successfully set new background color: " << value << "\n";
+}
+
+void Window::PrintTime(const std::string_view value)
+{
+	(void)value;
+
+	const auto now       = std::chrono::system_clock::now();
+	const std::time_t tt = std::chrono::system_clock::to_time_t(now);
+
+	std::tm localTime{};
+	localtime_s(&localTime, &tt);
+
+	std::cout << "Local time: " << std::put_time(&localTime, "%Y-%m-%d %H:%M:%S") << "\n";
 }

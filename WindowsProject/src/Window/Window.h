@@ -23,6 +23,7 @@ private:
 	// Command functions
 	static void ChangeTitle(const std::string_view value);
 	static void ChangeBackgroundFn(const std::string_view value);
+	static void PrintTime(const std::string_view value);
 
 
 	static HWND m_hwnd;
