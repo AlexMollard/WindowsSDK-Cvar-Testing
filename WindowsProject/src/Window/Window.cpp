@@ -14,20 +14,28 @@ Window::Window(HINSTANCE hInstance, int nCmdShow)
 	freopen_s(reinterpret_cast<FILE**>(stdout), "CONOUT$", "w", stdout);
 	freopen_s(reinterpret_cast<FILE**>(stderr), "CONOUT$", "w", stderr);
 
+	// Enable ANSI escape sequence processing for colored/styled console output.
+	const HANDLE outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (outputHandle != INVALID_HANDLE_VALUE)
+	{
+		DWORD outputMode = 0;
+		if (GetConsoleMode(outputHandle, &outputMode))
+		{
+			outputMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+			if (!SetConsoleMode(outputHandle, outputMode))
+			{
+				std::cerr << "Warning: Failed to enable virtual terminal processing: " << GetLastError() << '\n';
+			}
+		}
+		else
+		{
+			std::cerr << "Warning: Failed to query console mode: " << GetLastError() << '\n';
+		}
+	}
+
 	// Get the current console screen buffer info
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-
-	// Set console font size and style
-	CONSOLE_FONT_INFOEX fontInfo{};
-	fontInfo.cbSize       = sizeof(fontInfo);
-	fontInfo.nFont        = 0;
-	fontInfo.dwFontSize.X = static_cast<SHORT>(16);
-	fontInfo.dwFontSize.Y = static_cast<SHORT>(32);
-	fontInfo.FontFamily   = FF_DONTCARE;
-	fontInfo.FontWeight   = FW_NORMAL;
-	wcscpy_s(fontInfo.FaceName, L"JetBrains Mono");
-	SetCurrentConsoleFontEx(GetStdHandle(STD_OUTPUT_HANDLE), FALSE, &fontInfo);
 
 	// Register signal handler function
 	if (SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE))
