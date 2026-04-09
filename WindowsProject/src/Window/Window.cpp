@@ -131,15 +131,14 @@ BOOL Window::CtrlHandler(DWORD dwCtrlType)
 
 void Window::AddExtraWindowCommands(CommandManager& commandManager, HWND& window)
 {
-
-	commandManager.registerCommand("title", Command(ChangeTitle, "Changes the main window's title"));
-
-	std::string backgroundColorDesc =
+	const std::string backgroundColorDesc =
 	    "Changes the main window's background color, takes a color name (e.g. red) or hex value (e.g. #FF0000) as "
 	    "parameter, or -h to display a list of available colors";
 
-	commandManager.registerCommand("background-color", Command(ChangeBackgroundFn, backgroundColorDesc));
-	commandManager.registerCommand("bgc", Command(ChangeBackgroundFn, "Shorter name for the 'background-color' command"));
+	commandManager.registerCommands({
+	    { "title", Command(ChangeTitle, "Changes the main window's title") },
+	    { "background-color", Command(ChangeBackgroundFn, backgroundColorDesc), { "bgc" } },
+	});
 }
 
 void Window::ChangeTitle(const std::string_view value)
@@ -172,6 +171,9 @@ void Window::ChangeBackgroundFn(const std::string_view value)
 
 	if (value == "-h")
 	{
+		const std::ios::fmtflags previousFlags = std::cout.flags();
+		const char previousFill                = std::cout.fill();
+
 		// Define text colors for the table
 		const std::string COLOR_RESET = "\033[0m";
 		const std::string COLOR_NAME  = "\033[38;5;208m"; // Light orange
@@ -191,6 +193,8 @@ void Window::ChangeBackgroundFn(const std::string_view value)
 			print_color(color.first, color.second);
 		}
 		std::cout << "\n";
+		std::cout.flags(previousFlags);
+		std::cout.fill(previousFill);
 
 		return;
 	}

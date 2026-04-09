@@ -13,15 +13,30 @@ CommandManager::CommandManager()
 	    "help",
 	    Command([this](const std::string_view& value) { this->printCommands(); }, "Displays a list of available commands"));
 
-	registerBasicCommand("close", Command([](const std::string_view& value) { std::exit(0); }, "Exits the program"));
+	registerBasicCommand("close", Command([](const std::string_view& value) { std::exit(0); }, "Exits the program"),
+	                     { "quit", "exit" });
 
-	registerBasicCommand("clear",
-	                     Command([](const std::string_view& value) { std::cout << "\x1B[2J\x1B[H"; }, "Clears the console"));
+	registerBasicCommand(
+	    "clear", Command([](const std::string_view& value) { std::cout << "\x1B[2J\x1B[H"; }, "Clears the console"),
+	    { "cls" });
 }
 
-void CommandManager::registerCommand(std::string_view name, const Command& command)
+void CommandManager::registerCommand(std::string_view name, const Command& command,
+	                                  std::initializer_list<std::string_view> aliases)
 {
-	userCommands.emplace(name, command);
+	userCommands.emplace(std::string(name), command);
+	for (const auto alias : aliases)
+	{
+		userCommands.emplace(std::string(alias), command);
+	}
+}
+
+void CommandManager::registerCommands(std::initializer_list<CommandRegistration> commands)
+{
+	for (const auto& command : commands)
+	{
+		registerCommand(command.name, command.command, command.aliases);
+	}
 }
 
 void CommandManager::emplace(std::string_view name, const Command& command)
@@ -31,7 +46,7 @@ void CommandManager::emplace(std::string_view name, const Command& command)
 
 void CommandManager::executeCommand(std::string_view commandName, const std::string& value) const
 {
-	const auto it1 = basicCommands.find(commandName);
+	const auto it1 = basicCommands.find(std::string(commandName));
 	if (it1 != basicCommands.end())
 	{
 		it1->second.execute(value);
@@ -39,7 +54,7 @@ void CommandManager::executeCommand(std::string_view commandName, const std::str
 		return;
 	}
 
-	const auto it2 = userCommands.find(commandName);
+	const auto it2 = userCommands.find(std::string(commandName));
 	if (it2 != userCommands.end())
 	{
 		it2->second.execute(value);
@@ -111,12 +126,17 @@ std::vector<std::string> CommandManager::getCommandNames() const
 	return commandNames;
 }
 
-void CommandManager::registerBasicCommand(std::string_view name, const Command& command)
+void CommandManager::registerBasicCommand(std::string_view name, const Command& command,
+	                                      std::initializer_list<std::string_view> aliases)
 {
-	basicCommands.emplace(name, command);
+	basicCommands.emplace(std::string(name), command);
+	for (const auto alias : aliases)
+	{
+		basicCommands.emplace(std::string(alias), command);
+	}
 }
 
-void CommandManager::printCommandMap(const std::string& title, const std::map<std::string_view, Command>& commandMap) const
+void CommandManager::printCommandMap(const std::string& title, const std::map<std::string, Command>& commandMap) const
 {
 	const auto reset = "\033[0m";
 	const auto bold  = "\033[1m";
@@ -186,7 +206,7 @@ std::vector<std::string> CommandManager::getCommandCompletions(const std::string
 	{
 		if (cmd.first.find(partialCommand) == 0) // Command starts with partialCommand
 		{
-			completions.push_back(std::string(cmd.first));
+			completions.push_back(cmd.first);
 		}
 	}
 
@@ -195,7 +215,7 @@ std::vector<std::string> CommandManager::getCommandCompletions(const std::string
 	{
 		if (cmd.first.find(partialCommand) == 0) // Command starts with partialCommand
 		{
-			completions.push_back(std::string(cmd.first));
+			completions.push_back(cmd.first);
 		}
 	}
 
